@@ -15,17 +15,17 @@ namespace apex {
 class ShadowMapping {
 public:
     ShadowMapping(Camera *view_cam, double max_dist);
-    ~ShadowMapping();
+    virtual ~ShadowMapping();
 
     const Vector3 &GetLightDirection() const;
     void SetLightDirection(const Vector3 &dir);
     OrthoCamera *GetShadowCamera();
     std::shared_ptr<Texture> GetShadowMap();
 
-    void Begin();
-    void End();
+    virtual void Begin();
+    virtual void End();
 
-private:
+protected:
     double max_dist;
 
     OrthoCamera *shadow_cam;
@@ -36,6 +36,8 @@ private:
     std::array<Vector3, 8> frustum_corners_ls;
     std::array<Vector3, 8> frustum_corners_ws;
     BoundingBox bb;
+
+    Vector3 m_center_pos;
 
     void TransformPoints(const std::array<Vector3, 8> &in_vec,
         std::array<Vector3, 8> &out_vec, const Matrix4 &mat) const;
