@@ -1,5 +1,8 @@
-#include "glfw_engine.h"
-#include "gl_util.h"
+#include "core_engine.h"
+
+#include "backend/glfw_engine.h"
+#include "backend/mgl_engine.h"
+
 #include "game.h"
 #include "entity.h"
 #include "util.h"
@@ -78,8 +81,8 @@ using namespace apex;
 
 class MyGame : public Game {
 public:
-    Camera *cam, *env_cam;
-    Framebuffer *fbo, *env_fbo;
+    Camera *cam;
+    Framebuffer *fbo;
     PssmShadowMapping *shadows;
 
     std::vector<std::shared_ptr<Entity>> m_raytested_entities;
@@ -117,9 +120,7 @@ public:
     {
         delete shadows;
         delete fbo;
-        // delete env_fbo;
         delete cam;
-        // delete env_cam;
 
         AudioManager::Deinitialize();
     }
@@ -231,6 +232,9 @@ public:
 
     void Initialize()
     {
+        // Initialize root node
+        top = std::make_shared<Entity>("top");
+
         ShaderManager::GetInstance()->SetBaseShaderProperties(ShaderProperties()
             .Define("SHADOW_MAP_RADIUS", 0.055f)
         );
@@ -245,6 +249,8 @@ public:
             750.0f
         );
 
+        cam->SetTranslation(Vector3(4, 0, 0));
+
         shadows = new PssmShadowMapping(cam, 4, 100);
         shadows->SetVarianceShadowMapping(true);
 
@@ -255,17 +261,16 @@ public:
         Environment::GetInstance()->GetProbeRenderer()->SetRenderTextures(true);
         Environment::GetInstance()->GetProbeRenderer()->GetProbe()->SetOrigin(Vector3(0, 10, 0));
 
-        m_renderer->GetPostProcessing()->AddFilter<SSAOFilter>("ssao", 20);
-        m_renderer->GetPostProcessing()->AddFilter<BloomFilter>("bloom", 40);
-        m_renderer->GetPostProcessing()->AddFilter<DepthOfFieldFilter>("depth of field", 50);
-        m_renderer->GetPostProcessing()->AddFilter<GammaCorrectionFilter>("gamma correction", 999);
-        m_renderer->GetPostProcessing()->AddFilter<FXAAFilter>("fxaa", 9999);
-        m_renderer->SetDeferred(true);
+        // m_renderer->GetPostProcessing()->AddFilter<SSAOFilter>("ssao", 20);
+        // m_renderer->GetPostProcessing()->AddFilter<BloomFilter>("bloom", 40);
+        // m_renderer->GetPostProcessing()->AddFilter<DepthOfFieldFilter>("depth of field", 50);
+        // m_renderer->GetPostProcessing()->AddFilter<GammaCorrectionFilter>("gamma correction", 999);
+        // m_renderer->GetPostProcessing()->AddFilter<FXAAFilter>("fxaa", 9999);
+        // m_renderer->SetDeferred(true);
 
-        env_cam = new PerspectiveCamera(45, 256, 256, 0.3f, 100.0f);
-        env_cam->SetTranslation(Vector3(0, 10, 0));
         fbo = new Framebuffer2D(cam->GetWidth(), cam->GetHeight());
-        env_fbo = new FramebufferCube(256, 256);
+
+
         AudioManager::GetInstance()->Initialize();
 
         Environment::GetInstance()->GetSun().SetDirection(Vector3(1.9f, 0.35f, 1.9f).Normalize());
@@ -274,10 +279,7 @@ public:
         Environment::GetInstance()->AddPointLight(std::make_shared<PointLight>(Vector3(6.0f, 15, 0), Vector4(0.0f, 1.0f, 0.0f, 1.0f), 10.0f));
         Environment::GetInstance()->AddPointLight(std::make_shared<PointLight>(Vector3(0, 15, 6.0f), Vector4(0.0f, 1.0f, 0.0f, 1.0f), 10.0f));
         Environment::GetInstance()->AddPointLight(std::make_shared<PointLight>(Vector3(0, 15, -6.0f), Vector4(1.0f, 0.4f, 0.7f, 1.0f), 10.0f));
-        // Initialize root node
-        top = std::make_shared<Entity>("top");
 
-        cam->SetTranslation(Vector3(4, 0, 0));
 
         // Initialize particle system
         // InitParticleSystem();
@@ -311,6 +313,7 @@ public:
         top->AddChild(ui_crosshair);
         GetUIManager()->RegisterUIObject(ui_crosshair);
 
+        return;
 
         ShaderProperties defines;
         // defines.Define("DEFERRED", m_renderer->IsDeferred());
@@ -855,9 +858,10 @@ public:
 
     void Render()
     {
+
         m_renderer->Begin(cam, top.get());
 
-        if (Environment::GetInstance()->ShadowsEnabled()) {
+        /*if (Environment::GetInstance()->ShadowsEnabled()) {
             Vector3 shadow_dir = Environment::GetInstance()->GetSun().GetDirection() * -1;
             shadow_dir.SetY(-1.0f);
             shadows->SetOrigin(cam->GetTranslation());
@@ -871,7 +875,7 @@ public:
             Environment::GetInstance()->SetGlobalCubemap(
                 Environment::GetInstance()->GetProbeRenderer()->GetColorTexture()
             );
-        }
+        }*/
 
         m_renderer->Render(cam);
         m_renderer->End(cam, top.get());
@@ -882,7 +886,7 @@ public:
 
 int main()
 {
-    CoreEngine *engine = new GlfwEngine();
+    CoreEngine *engine = new ENGINE_BACKEND();
     CoreEngine::SetInstance(engine);
 
     auto *game = new MyGame(RenderWindow(1480, 1200, "AEngine Demo"));

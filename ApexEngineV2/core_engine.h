@@ -60,6 +60,10 @@ public:
         DEPTH_COMPONENT16 = 0x81A5,
         DEPTH_COMPONENT24 = 0x81A6,
         DEPTH_COMPONENT32F = 0x8CAC,
+        RGBA32F = 0x8814,
+        RGB32F = 0x8815,
+        RGBA16F = 0x881A,
+        RGB16F = 0x881B,
 
         NEAREST = 0x2600,
         LINEAR = 0x2601,
@@ -71,6 +75,7 @@ public:
         TEXTURE_MIN_FILTER = 0x2801,
         TEXTURE_WRAP_S = 0x2802,
         TEXTURE_WRAP_T = 0x2803,
+        TEXTURE_WRAP_R = 0x8072,
         TEXTURE = 0x1702,
         TEXTURE_CUBE_MAP = 0x8513,
         TEXTURE_BINDING_CUBE_MAP = 0x8514,
@@ -121,6 +126,7 @@ public:
     virtual void SetCursorLocked(bool locked) = 0;
     virtual void Viewport(int x, int y, size_t width, size_t height) = 0;
     virtual void Clear(int mask) = 0;
+    virtual void ClearColor(float red, float green, float blue, float alpha) = 0;
     virtual void SetMousePosition(double x, double y) = 0;
     virtual void Enable(int cap) = 0;
     virtual void Disable(int cap) = 0;
@@ -133,6 +139,7 @@ public:
     virtual void BufferSubData(int target, size_t offset, size_t size, const void *data) = 0;
     virtual void BindVertexArray(unsigned int target) = 0;
     virtual void GenVertexArrays(size_t size, unsigned int *arrays) = 0;
+    virtual void DeleteVertexArrays(size_t size, unsigned int *arrays) = 0;
     virtual void EnableVertexAttribArray(unsigned int index) = 0;
     virtual void DisableVertexAttribArray(unsigned int index) = 0;
     virtual void VertexAttribPointer(unsigned int index, int size, int type, bool normalized, size_t stride, void *ptr) = 0;
@@ -149,6 +156,7 @@ public:
     virtual void GenFramebuffers(size_t n, unsigned int *ids) = 0;
     virtual void DeleteFramebuffers(size_t n, const unsigned int *ids) = 0;
     virtual void BindFramebuffer(int target, unsigned int framebuffer) = 0;
+    virtual void FramebufferTexture(int target, int attachment, unsigned int texture, int level) = 0;
     virtual void FramebufferTexture(int target, int attachment, unsigned int texture, unsigned int texture_target, int level) = 0;
     virtual void DrawBuffers(size_t n, const unsigned int *bufs) = 0;
     virtual unsigned int CheckFramebufferStatus(int target) = 0;
@@ -160,6 +168,7 @@ public:
     virtual void GetShaderiv(unsigned int shader, int pname, int *params) = 0;
     virtual void GetShaderInfoLog(unsigned int shader, int max, int *len, char *info) = 0;
     virtual void BindAttribLocation(unsigned int program, unsigned int index, const char *name) = 0;
+    virtual void BindFragDataLocation(unsigned int program, unsigned int color_number, const char *name) = 0;
     virtual void LinkProgram(unsigned int program) = 0;
     virtual void ValidateProgram(unsigned int program) = 0;
     virtual void GetProgramiv(unsigned int program, int pname, int *params) = 0;
@@ -180,6 +189,8 @@ public:
     virtual void VertexAttribDivisor(unsigned int index, unsigned int divisor) = 0;
     virtual void DrawArraysInstanced(int mode, int first, size_t count, size_t primcount) = 0;
     virtual void BindImageTexture(unsigned int unit, unsigned int texture, int level, bool layered, int layer, unsigned int access, unsigned int format) = 0;
+    virtual void CopyTexSubImage2D(unsigned int target, int level, int xoffset, int yoffset, int x, int y, int width, int height) = 0;
+    virtual void CullFace(int mode) = 0;
 
 private:
     static CoreEngine *instance;

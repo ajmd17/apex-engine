@@ -1,5 +1,5 @@
 #include "framebuffer.h"
-#include "../opengl.h"
+#include "../core_engine.h"
 
 #include <iostream>
 
@@ -16,7 +16,7 @@ Framebuffer::Framebuffer(int width, int height)
 Framebuffer::~Framebuffer()
 {
     if (is_created) {
-        glDeleteFramebuffers(1, &id);
+        CoreEngine::GetInstance()->DeleteFramebuffers(1, &id);
     }
     is_uploaded = false;
     is_created = false;
@@ -24,7 +24,7 @@ Framebuffer::~Framebuffer()
 
 void Framebuffer::End()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    CoreEngine::GetInstance()->BindFramebuffer(CoreEngine::GLEnums::FRAMEBUFFER, 0);
 }
 
 } // namespace apex

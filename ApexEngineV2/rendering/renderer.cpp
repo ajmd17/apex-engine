@@ -44,7 +44,7 @@ void Renderer::Render(Camera *cam)
         );
     }
 
-    RenderAll(cam, m_fbo);
+    RenderAll(cam/*, m_fbo*/);
 }
 
 void Renderer::End(Camera *cam, Entity *top)

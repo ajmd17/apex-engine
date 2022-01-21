@@ -26,11 +26,20 @@ include_directories(
   ${BULLET_INCLUDE_DIR}
   ${CMAKE_SOURCE_DIR}/ApexEngineV2
 )
+
+if(APPLE)
+link_directories(${CMAKE_SOURCE_DIR}/lib/macos)
+include_directories(
+  ${CMAKE_SOURCE_DIR}/include/MGL
+)
+endif()
+
 add_executable(${BUILD_NAME} ${SOURCES} ${HEADERS})
 
-# if(APPLE)
-  # target_link_libraries(${BUILD_NAME} ${CMAKE_THREAD_LIBS_INIT} ${OPENAL_LIBRARY} ${OPENGL_LIBRARIES} glfw m)
-# else()
+if(APPLE)
+  target_link_libraries(${BUILD_NAME} ${CMAKE_THREAD_LIBS_INIT} ${OPENAL_LIBRARY} ${BULLET_LIBRARIES} glfw m mgl)
+else()
   target_link_libraries(${BUILD_NAME} ${CMAKE_THREAD_LIBS_INIT} ${OPENAL_LIBRARY} ${OPENGL_LIBRARIES} ${BULLET_LIBRARIES} GLEW glfw m)
-# endif()
+endif()
+
 add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})

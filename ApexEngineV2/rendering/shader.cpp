@@ -1,6 +1,7 @@
 #include "shader.h"
 #include "../util/string_util.h"
 #include "../util/shader_preprocessor.h"
+#include "../core_engine.h"
 #include "../gl_util.h"
 
 namespace apex {
@@ -41,7 +42,7 @@ void Shader::CreateGpuData()
 {
     assert(!is_created);
 
-    progid = glCreateProgram();
+    progid = CoreEngine::GetInstance()->CreateProgram();
 
     CatchGLErrors("Failed to create shader program.");
 
@@ -62,19 +63,19 @@ void Shader::UploadGpuData()
         auto &sub = it.second;
 
         const char *code_str = sub.processed_code.c_str();
-        glShaderSource(sub.id, 1, &code_str, NULL);
-        glCompileShader(sub.id);
-        glAttachShader(progid, sub.id);
+        CoreEngine::GetInstance()->ShaderSource(sub.id, 1, &code_str, NULL);
+        CoreEngine::GetInstance()->CompileShader(sub.id);
+        CoreEngine::GetInstance()->AttachShader(progid, sub.id);
 
         int status = -1;
-        glGetShaderiv(sub.id, GL_COMPILE_STATUS, &status);
+        CoreEngine::GetInstance()->GetShaderiv(sub.id, GL_COMPILE_STATUS, &status);
 
         if (!status) {
             int maxlen;
-            glGetShaderiv(sub.id, GL_INFO_LOG_LENGTH, &maxlen);
+            CoreEngine::GetInstance()->GetShaderiv(sub.id, GL_INFO_LOG_LENGTH, &maxlen);
             char *log = new char[maxlen];
             memset(log, 0, maxlen);
-            glGetShaderInfoLog(sub.id, maxlen, NULL, log);
+            CoreEngine::GetInstance()->GetShaderInfoLog(sub.id, maxlen, NULL, log);
 
             std::cout << "In shader of class " << typeid(*this).name() << ":\n";
             std::cout << "\tShader compile error! ";
@@ -84,41 +85,43 @@ void Shader::UploadGpuData()
         }
     }
 
-    glBindFragDataLocation(progid, 0, "output0");
-    glBindFragDataLocation(progid, 1, "output1");
-    glBindFragDataLocation(progid, 2, "output2");
+    CoreEngine::GetInstance()->BindFragDataLocation(progid, 0, "output0");
+    CoreEngine::GetInstance()->BindFragDataLocation(progid, 1, "output1");
+    CoreEngine::GetInstance()->BindFragDataLocation(progid, 2, "output2");
+
     CatchGLErrors("Failed to bind shader frag data.");
 
-    glBindAttribLocation(progid, 0, "a_position");
-    glBindAttribLocation(progid, 1, "a_normal");
-    glBindAttribLocation(progid, 2, "a_texcoord0");
-    glBindAttribLocation(progid, 3, "a_texcoord1");
-    glBindAttribLocation(progid, 4, "a_tangent");
-    glBindAttribLocation(progid, 5, "a_bitangent");
-    glBindAttribLocation(progid, 6, "a_boneweights");
-    glBindAttribLocation(progid, 7, "a_boneindices");
+    CoreEngine::GetInstance()->BindAttribLocation(progid, 0, "a_position");
+    CoreEngine::GetInstance()->BindAttribLocation(progid, 1, "a_normal");
+    CoreEngine::GetInstance()->BindAttribLocation(progid, 2, "a_texcoord0");
+    CoreEngine::GetInstance()->BindAttribLocation(progid, 3, "a_texcoord1");
+    CoreEngine::GetInstance()->BindAttribLocation(progid, 4, "a_tangent");
+    CoreEngine::GetInstance()->BindAttribLocation(progid, 5, "a_bitangent");
+    CoreEngine::GetInstance()->BindAttribLocation(progid, 6, "a_boneweights");
+    CoreEngine::GetInstance()->BindAttribLocation(progid, 7, "a_boneindices");
+
     CatchGLErrors("Failed to bind shader attributes.");
 
-    glLinkProgram(progid);
-    glValidateProgram(progid);
+    CoreEngine::GetInstance()->LinkProgram(progid);
+    CoreEngine::GetInstance()->ValidateProgram(progid);
 
     int linked = 0;
-    glGetProgramiv(progid, GL_LINK_STATUS, &linked);
+    CoreEngine::GetInstance()->GetProgramiv(progid, GL_LINK_STATUS, &linked);
 
     if (!linked) {
         int maxlen = 0;
-        glGetProgramiv(progid, GL_INFO_LOG_LENGTH, &maxlen);
+        CoreEngine::GetInstance()->GetProgramiv(progid, GL_INFO_LOG_LENGTH, &maxlen);
 
         if (maxlen != 0) {
             char *log = new char[maxlen];
 
-            glGetProgramInfoLog(progid, maxlen, NULL, log);
+            CoreEngine::GetInstance()->GetProgramInfoLog(progid, maxlen, NULL, log);
 
             std::cout << "In shader of class " << typeid(*this).name() << ":\n";
             std::cout << "\tShader linker error! ";
             std::cout << "\tCompile log: \n" << log << "\n";
 
-            glDeleteProgram(progid);
+            CoreEngine::GetInstance()->DeleteProgram(progid);
 
             delete[] log;
 
@@ -132,10 +135,10 @@ void Shader::UploadGpuData()
 void Shader::DestroyGpuData()
 {
     if (is_created) {
-        glDeleteProgram(progid);
+        CoreEngine::GetInstance()->DeleteProgram(progid);
 
         for (auto &&sub : subshaders) {
-            glDeleteShader(sub.second.id);
+            CoreEngine::GetInstance()->DeleteShader(sub.second.id);
         }
     }
 
@@ -171,24 +174,26 @@ void Shader::ApplyMaterial(const Material &mat)
     }
 
     if (cull_mode == (MaterialFaceCull::MaterialFace_Front | MaterialFaceCull::MaterialFace_Back)) {
-        glCullFace(GL_FRONT_AND_BACK);
+        CoreEngine::GetInstance()->CullFace(GL_FRONT_AND_BACK);
     } else if (cull_mode & MaterialFaceCull::MaterialFace_Front) {
-        glCullFace(GL_FRONT);
+        CoreEngine::GetInstance()->CullFace(GL_FRONT);
     } else if (cull_mode & MaterialFaceCull::MaterialFace_Back) {
-        glCullFace(GL_BACK);
+        CoreEngine::GetInstance()->CullFace(GL_BACK);
     } else if (cull_mode == MaterialFaceCull::MaterialFace_None) {
-        glDisable(GL_CULL_FACE);
+        CoreEngine::GetInstance()->Disable(GL_CULL_FACE);
     }
 
     if (mat.alpha_blended) {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        CoreEngine::GetInstance()->Enable(GL_BLEND);
+        CoreEngine::GetInstance()->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
+
     if (!mat.depth_test) {
-        glDisable(GL_DEPTH_TEST);
+        CoreEngine::GetInstance()->Disable(GL_DEPTH_TEST);
     }
+
     if (!mat.depth_write) {
-        glDepthMask(false);
+        CoreEngine::GetInstance()->DepthMask(false);
     }
 }
 
@@ -221,46 +226,46 @@ void Shader::Use()
         m_previous_properties_hash_code = m_properties.GetHashCode().Value();
     }
 
-    glUseProgram(progid);
+    CoreEngine::GetInstance()->UseProgram(progid);
 
     if (uniform_changed) {
         int texture_index = 1;
 
         for (auto &&uniform : uniforms) {
-            int loc = glGetUniformLocation(progid, uniform.first.c_str());
+            int loc = CoreEngine::GetInstance()->GetUniformLocation(progid, uniform.first.c_str());
 
             if (loc != -1) {
                 switch (uniform.second.type) {
                 case Uniform::Uniform_Float:
-                    glUniform1f(loc, uniform.second.data[0]);
+                    CoreEngine::GetInstance()->Uniform1f(loc, uniform.second.data[0]);
                     break;
                 case Uniform::Uniform_Int:
-                    glUniform1i(loc, (int)uniform.second.data[0]);
+                    CoreEngine::GetInstance()->Uniform1i(loc, (int)uniform.second.data[0]);
                     break;
                 case Uniform::Uniform_Vector2:
-                    glUniform2f(loc, uniform.second.data[0], uniform.second.data[1]);
+                    CoreEngine::GetInstance()->Uniform2f(loc, uniform.second.data[0], uniform.second.data[1]);
                     break;
                 case Uniform::Uniform_Vector3:
-                    glUniform3f(loc, uniform.second.data[0], uniform.second.data[1],
+                    CoreEngine::GetInstance()->Uniform3f(loc, uniform.second.data[0], uniform.second.data[1],
                         uniform.second.data[2]);
                     break;
                 case Uniform::Uniform_Vector4:
-                    glUniform4f(loc, uniform.second.data[0], uniform.second.data[1],
+                    CoreEngine::GetInstance()->Uniform4f(loc, uniform.second.data[0], uniform.second.data[1],
                         uniform.second.data[2], uniform.second.data[3]);
                     break;
                 case Uniform::Uniform_Matrix4:
-                    glUniformMatrix4fv(loc, 1, true, &uniform.second.data[0]);
+                    CoreEngine::GetInstance()->UniformMatrix4fv(loc, 1, true, &uniform.second.data[0]);
                     break;
                 case Uniform::Uniform_Texture2D:
                     Texture::ActiveTexture(texture_index);
-                    glBindTexture(GL_TEXTURE_2D, int(uniform.second.data[0]));
-                    glUniform1i(loc, texture_index);
+                    CoreEngine::GetInstance()->BindTexture(GL_TEXTURE_2D, int(uniform.second.data[0]));
+                    CoreEngine::GetInstance()->Uniform1i(loc, texture_index);
                     texture_index++;
                     break;
                 case Uniform::Uniform_Texture3D:
                     Texture::ActiveTexture(texture_index);
-                    glBindTexture(GL_TEXTURE_CUBE_MAP, int(uniform.second.data[0]));
-                    glUniform1i(loc, texture_index);
+                    CoreEngine::GetInstance()->BindTexture(GL_TEXTURE_CUBE_MAP, int(uniform.second.data[0]));
+                    CoreEngine::GetInstance()->Uniform1i(loc, texture_index);
                     texture_index++;
                     break;
                 default:
@@ -279,15 +284,15 @@ void Shader::Use()
 void Shader::End()
 {
     // m_override_cull = MaterialFaceCull::MaterialFace_None;
-    glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(true);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glBlendFunc(GL_ONE, GL_ZERO);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    CoreEngine::GetInstance()->Disable(GL_BLEND);
+    CoreEngine::GetInstance()->Enable(GL_DEPTH_TEST);
+    CoreEngine::GetInstance()->DepthMask(true);
+    CoreEngine::GetInstance()->Enable(GL_CULL_FACE);
+    CoreEngine::GetInstance()->CullFace(GL_BACK);
+    CoreEngine::GetInstance()->BlendFunc(GL_ONE, GL_ZERO);
+    CoreEngine::GetInstance()->BindTexture(GL_TEXTURE_2D, 0);
 
-    glUseProgram(0);
+    CoreEngine::GetInstance()->UseProgram(0);
 }
 
 void Shader::AddSubShader(SubShaderType type,

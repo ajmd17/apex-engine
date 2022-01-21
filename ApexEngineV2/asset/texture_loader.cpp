@@ -29,14 +29,14 @@ std::shared_ptr<Loadable> TextureLoader::LoadFromFile(const std::string &path)
             tex->SetFormat(GL_RGB);
             tex->SetInternalFormat(GL_RGB8);
             break;
-        case STBI_grey_alpha:
-            tex->SetFormat(GL_RG);
-            tex->SetInternalFormat(GL_RG8);
-            break;
-        case STBI_grey:
-            tex->SetFormat(GL_RED);
-            tex->SetInternalFormat(GL_R8);
-            break;
+        // case STBI_grey_alpha:
+        //     tex->SetFormat(GL_RG);
+        //     tex->SetInternalFormat(GL_RG8);
+        //     break;
+        // case STBI_grey:
+        //     tex->SetFormat(GL_RED);
+        //     tex->SetInternalFormat(GL_R8);
+        //     break;
         default:
             std::cout << "Unknown image format!" << std::endl;
             throw "Unknown image format";

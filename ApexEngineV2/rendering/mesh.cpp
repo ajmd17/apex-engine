@@ -1,5 +1,6 @@
 #include "mesh.h"
 #include "../math/triangle.h"
+#include "../core_engine.h"
 #include "../gl_util.h"
 
 namespace apex {
@@ -25,9 +26,9 @@ Mesh::Mesh()
 Mesh::~Mesh()
 {
     if (is_created) {
-        glDeleteVertexArrays(1, &vao);
-        glDeleteBuffers(1, &vbo);
-        glDeleteBuffers(1, &ibo);
+        CoreEngine::GetInstance()->DeleteVertexArrays(1, &vao);
+        CoreEngine::GetInstance()->DeleteBuffers(1, &vbo);
+        CoreEngine::GetInstance()->DeleteBuffers(1, &ibo);
     }
 
     is_uploaded = false;
@@ -195,45 +196,45 @@ void Mesh::CalculateTangents()
 void Mesh::Render()
 {
     if (!is_created) {
-        glGenVertexArrays(1, &vao);
+        CoreEngine::GetInstance()->GenVertexArrays(1, &vao);
         CatchGLErrors("Failed to generate vertex arrays.");
 
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ibo);
+        CoreEngine::GetInstance()->GenBuffers(1, &vbo);
+        CoreEngine::GetInstance()->GenBuffers(1, &ibo);
 
         is_created = true;
     }
 
-    glBindVertexArray(vao);
+    CoreEngine::GetInstance()->BindVertexArray(vao);
 
     if (!is_uploaded) {
         std::vector<float> buffer = CreateBuffer();
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, buffer.size() * sizeof(float), &buffer[0], GL_STATIC_DRAW);
+        CoreEngine::GetInstance()->BindBuffer(GL_ARRAY_BUFFER, vbo);
+        CoreEngine::GetInstance()->BufferData(GL_ARRAY_BUFFER, buffer.size() * sizeof(float), &buffer[0], GL_STATIC_DRAW);
         CatchGLErrors("Failed to set buffer data.");
 
         unsigned int error;
 
         for (auto &&attr : attribs) {
-            glEnableVertexAttribArray(attr.second.index);
+            CoreEngine::GetInstance()->EnableVertexAttribArray(attr.second.index);
             CatchGLErrors("Failed to enable vertex attribute array." __FILE__);
 
-            glVertexAttribPointer(attr.second.index, attr.second.size, GL_FLOAT,
+            CoreEngine::GetInstance()->VertexAttribPointer(attr.second.index, attr.second.size, GL_FLOAT,
                 false, vertex_size * sizeof(float), (void*)(attr.second.offset * sizeof(float)));
 
             CatchGLErrors("Failed to set vertex attribute pointer.");
         }
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(MeshIndex), &indices[0], GL_STATIC_DRAW);
+        CoreEngine::GetInstance()->BindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        CoreEngine::GetInstance()->BufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(MeshIndex), &indices[0], GL_STATIC_DRAW);
 
         is_uploaded = true;
     }
 
-    glDrawElements(primitive_type, indices.size(), GL_UNSIGNED_INT, 0);
+    CoreEngine::GetInstance()->DrawElements(primitive_type, indices.size(), GL_UNSIGNED_INT, 0);
 
-    glBindVertexArray(0);
+    CoreEngine::GetInstance()->BindVertexArray(0);
 }
 
 bool Mesh::IntersectRay(const Ray &ray, const Transform &transform, RaytestHit &out) const

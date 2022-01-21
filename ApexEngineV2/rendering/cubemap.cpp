@@ -21,7 +21,7 @@ void Cubemap::Initialize()
 {
     CoreEngine::GetInstance()->Enable(CoreEngine::GLEnums::TEXTURE_CUBE_MAP);
 
-    CatchGLErrors("Failed to enable GL_TEXTURE_CUBE_MAP", false);
+    CatchGLErrors("Failed to enable CoreEngine::GLEnums::TEXTURE_CUBE_MAP", false);
 
     Texture::Initialize();
 }
@@ -37,8 +37,17 @@ void Cubemap::UploadGpuData()
             throw std::runtime_error("Could not upload cubemap because texture #" + std::to_string(i + 1) + " had no bytes set.");
         }
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, tex->GetInternalFormat(),
-            tex->GetWidth(), tex->GetHeight(), 0, tex->GetFormat(), GL_UNSIGNED_BYTE, tex->GetBytes());            
+        CoreEngine::GetInstance()->TexImage2D(
+            CoreEngine::GLEnums::TEXTURE_CUBE_MAP_POSITIVE_X + i,
+            0,
+            tex->GetInternalFormat(),
+            tex->GetWidth(),
+            tex->GetHeight(),
+            0,
+            tex->GetFormat(),
+            CoreEngine::GLEnums::UNSIGNED_BYTE,
+            tex->GetBytes()
+        );            
     }
 
     CoreEngine::GetInstance()->TexParameteri(
@@ -46,26 +55,46 @@ void Cubemap::UploadGpuData()
         CoreEngine::GLEnums::TEXTURE_MAG_FILTER,
         CoreEngine::GLEnums::LINEAR
     );
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
-    // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, CUBEMAP_NUM_MIPMAPS);
 
-    // glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    CoreEngine::GetInstance()->TexParameteri(
+        CoreEngine::GLEnums::TEXTURE_CUBE_MAP,
+        CoreEngine::GLEnums::TEXTURE_MIN_FILTER,
+        CoreEngine::GLEnums::LINEAR
+    );
+
+    CoreEngine::GetInstance()->TexParameteri(
+        CoreEngine::GLEnums::TEXTURE_CUBE_MAP,
+        CoreEngine::GLEnums::TEXTURE_WRAP_S,
+        CoreEngine::GLEnums::CLAMP_TO_EDGE
+    );
+
+    CoreEngine::GetInstance()->TexParameteri(
+        CoreEngine::GLEnums::TEXTURE_CUBE_MAP,
+        CoreEngine::GLEnums::TEXTURE_WRAP_T,
+        CoreEngine::GLEnums::CLAMP_TO_EDGE
+    );
+
+    CoreEngine::GetInstance()->TexParameteri(
+        CoreEngine::GLEnums::TEXTURE_CUBE_MAP,
+        CoreEngine::GLEnums::TEXTURE_WRAP_R,
+        CoreEngine::GLEnums::CLAMP_TO_EDGE
+    );
+    // glTexParameteri(CoreEngine::GLEnums::TEXTURE_CUBE_MAP, CoreEngine::GLEnums::TEXTURE_BASE_LEVEL, 0);
+    // glTexParameteri(CoreEngine::GLEnums::TEXTURE_CUBE_MAP, CoreEngine::GLEnums::TEXTURE_MAX_LEVEL, CUBEMAP_NUM_MIPMAPS);
+
+    // glGenerateMipmap(CoreEngine::GLEnums::TEXTURE_CUBE_MAP);
 
     CatchGLErrors("Failed to upload cubemap");
 }
 
 void Cubemap::Use()
 {
-    glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+    CoreEngine::GetInstance()->BindTexture(CoreEngine::GLEnums::TEXTURE_CUBE_MAP, id);
 }
 
 void Cubemap::End()
 {
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    CoreEngine::GetInstance()->BindTexture(CoreEngine::GLEnums::TEXTURE_CUBE_MAP, 0);
 }
 
 } // namespace apex
