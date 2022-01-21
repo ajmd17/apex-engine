@@ -90,7 +90,7 @@ void Framebuffer2D::Use()
         int draw_buffer_index = 0;
 
         if (m_has_color_texture) {
-            m_color_texture->Use();
+            m_color_texture->Begin();
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                 GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_color_texture->GetId(), 0);
             CatchGLErrors("Failed to attach color attachment 0 to framebuffer.", false);
@@ -100,7 +100,7 @@ void Framebuffer2D::Use()
         }
 
         if (m_has_normal_texture) {
-            m_normal_texture->Use();
+            m_normal_texture->Begin();
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                 GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_normal_texture->GetId(), 0);
             CatchGLErrors("Failed to attach color attachment 1 to framebuffer.", false);
@@ -110,7 +110,7 @@ void Framebuffer2D::Use()
         }
 
         if (m_has_position_texture) {
-            m_position_texture->Use();
+            m_position_texture->Begin();
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                 GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_position_texture->GetId(), 0);
             CatchGLErrors("Failed to attach color attachment 2 to framebuffer.", false);
@@ -120,7 +120,7 @@ void Framebuffer2D::Use()
         }
 
         if (m_has_data_texture) {
-            m_data_texture->Use();
+            m_data_texture->Begin();
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                 GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_data_texture->GetId(), 0);
             CatchGLErrors("Failed to attach color attachment 3 to framebuffer.", false);
@@ -130,7 +130,7 @@ void Framebuffer2D::Use()
         }
 
         if (m_has_depth_texture) {
-            m_depth_texture->Use();
+            m_depth_texture->Begin();
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                 GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depth_texture->GetId(), 0);
             CatchGLErrors("Failed to attach depth texture to framebuffer.", false);
@@ -154,7 +154,7 @@ void Framebuffer2D::StoreColor()
         return;
     }
 
-    m_color_texture->Use();
+    m_color_texture->Begin();
 
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
 
@@ -167,7 +167,7 @@ void Framebuffer2D::StoreDepth()
         return;
     }
 
-    m_depth_texture->Use();
+    m_depth_texture->Begin();
 
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
 
