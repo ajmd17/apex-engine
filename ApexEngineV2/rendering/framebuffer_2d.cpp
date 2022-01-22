@@ -3,6 +3,24 @@
 
 namespace apex {
 
+std::shared_ptr<Texture> Framebuffer2D::MakeTexture(
+    Framebuffer::FramebufferAttachment attachment,
+    int width,
+    int height,
+    unsigned char *bytes
+)
+{
+    auto attributes = Framebuffer::default_texture_attributes[attachment];
+
+    auto texture = std::make_shared<Texture2D>(width, height, bytes);
+    texture->SetInternalFormat(attributes.internal_format);
+    texture->SetFormat(attributes.format);
+    texture->SetFilter(attributes.mag_filter, attributes.min_filter);
+    texture->SetWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+
+    return texture;
+}
+
 Framebuffer2D::Framebuffer2D(
     int width,
     int height,
@@ -11,65 +29,19 @@ Framebuffer2D::Framebuffer2D(
     bool has_normal_texture,
     bool has_position_texture,
     bool has_data_texture
-)
-    : Framebuffer(width, height),
-      m_has_color_texture(has_color_texture),
-      m_has_depth_texture(has_depth_texture),
-      m_has_normal_texture(has_normal_texture),
-      m_has_position_texture(has_position_texture),
-      m_has_data_texture(has_data_texture)
+) : Framebuffer(width, height)
 {
-    if (m_has_color_texture) {
-        m_color_texture = std::make_shared<Texture2D>(width, height, (unsigned char*)nullptr);
-        m_color_texture->SetInternalFormat(GL_RGB32F);
-        m_color_texture->SetFormat(GL_RGB);
-        m_color_texture->SetFilter(GL_NEAREST, GL_NEAREST);
-        m_color_texture->SetWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    }
-
-    if (m_has_normal_texture) {
-        m_normal_texture = std::make_shared<Texture2D>(width, height, (unsigned char*)nullptr);
-        m_normal_texture->SetInternalFormat(GL_RGBA32F);
-        m_normal_texture->SetFormat(GL_RGBA);
-        m_normal_texture->SetFilter(GL_NEAREST, GL_NEAREST);
-        m_normal_texture->SetWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    }
-
-    if (m_has_position_texture) {
-        m_position_texture = std::make_shared<Texture2D>(width, height, (unsigned char*)nullptr);
-        m_position_texture->SetInternalFormat(GL_RGBA32F);
-        m_position_texture->SetFormat(GL_RGBA);
-        m_position_texture->SetFilter(GL_NEAREST, GL_NEAREST);
-        m_position_texture->SetWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    }
-
-    if (m_has_depth_texture) {
-        m_depth_texture = std::make_shared<Texture2D>(width, height, (unsigned char*)nullptr);
-        m_depth_texture->SetInternalFormat(GL_DEPTH_COMPONENT32F);
-        m_depth_texture->SetFormat(GL_DEPTH_COMPONENT);
-        m_depth_texture->SetFilter(GL_NEAREST, GL_NEAREST);
-        m_depth_texture->SetWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    }
-
-    if (m_has_data_texture) {
-        m_data_texture = std::make_shared<Texture2D>(width, height, (unsigned char*)nullptr);
-        m_data_texture->SetInternalFormat(GL_RGBA8);
-        m_data_texture->SetFormat(GL_RGBA);
-        m_data_texture->SetFilter(GL_NEAREST, GL_NEAREST);
-        m_data_texture->SetWrapMode(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    }
+    has_color_texture && (m_attachments[FRAMEBUFFER_ATTACHMENT_COLOR] = MakeTexture(FRAMEBUFFER_ATTACHMENT_COLOR, width, height));
+    has_depth_texture && (m_attachments[FRAMEBUFFER_ATTACHMENT_DEPTH] = MakeTexture(FRAMEBUFFER_ATTACHMENT_DEPTH, width, height));
+    has_normal_texture && (m_attachments[FRAMEBUFFER_ATTACHMENT_NORMALS] = MakeTexture(FRAMEBUFFER_ATTACHMENT_NORMALS, width, height));
+    has_position_texture && (m_attachments[FRAMEBUFFER_ATTACHMENT_POSITIONS] = MakeTexture(FRAMEBUFFER_ATTACHMENT_POSITIONS, width, height));
+    has_data_texture && (m_attachments[FRAMEBUFFER_ATTACHMENT_USERDATA] = MakeTexture(FRAMEBUFFER_ATTACHMENT_USERDATA, width, height));
 }
 
 Framebuffer2D::~Framebuffer2D()
 {
     // deleted in parent destructor
 }
-
-const std::shared_ptr<Texture> Framebuffer2D::GetColorTexture() const { return m_color_texture; }
-const std::shared_ptr<Texture> Framebuffer2D::GetNormalTexture() const { return m_normal_texture; }
-const std::shared_ptr<Texture> Framebuffer2D::GetPositionTexture() const { return m_position_texture; }
-const std::shared_ptr<Texture> Framebuffer2D::GetDepthTexture() const { return m_depth_texture; }
-const std::shared_ptr<Texture> Framebuffer2D::GetDataTexture() const { return m_data_texture; }
 
 void Framebuffer2D::Use()
 {
@@ -86,55 +58,39 @@ void Framebuffer2D::Use()
     glViewport(0, 0, width, height);
 
     if (!is_uploaded) {
-        unsigned int draw_buffers[4] = { GL_NONE };
+        unsigned int draw_buffers[FRAMEBUFFER_ATTACHMENT_MAX - 1] = { GL_NONE }; // -1 for depth
         int draw_buffer_index = 0;
 
-        if (m_has_color_texture) {
-            m_color_texture->Use();
-            glFramebufferTexture2D(GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_color_texture->GetId(), 0);
-            CatchGLErrors("Failed to attach color attachment 0 to framebuffer.", false);
-            m_color_texture->End();
+        for (int i = 0; i < sizeof(draw_buffers) / sizeof(draw_buffers[0]); i++) {
+            if (m_attachments[i] == nullptr) {
+                continue;
+            }
 
-            draw_buffers[draw_buffer_index++] = GL_COLOR_ATTACHMENT0;
+            m_attachments[i]->Use();
+            glFramebufferTexture2D(
+                GL_FRAMEBUFFER,
+                GL_COLOR_ATTACHMENT0 + i,
+                GL_TEXTURE_2D,
+                m_attachments[i]->GetId(),
+                0
+            );
+            CatchGLErrors("Failed to attach color attachment to framebuffer.", false);
+            m_attachments[i]->End();
+
+            draw_buffers[draw_buffer_index++] = GL_COLOR_ATTACHMENT0 + i;
         }
 
-        if (m_has_normal_texture) {
-            m_normal_texture->Use();
-            glFramebufferTexture2D(GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_normal_texture->GetId(), 0);
-            CatchGLErrors("Failed to attach color attachment 1 to framebuffer.", false);
-            m_normal_texture->End();
-
-            draw_buffers[draw_buffer_index++] = GL_COLOR_ATTACHMENT1;
-        }
-
-        if (m_has_position_texture) {
-            m_position_texture->Use();
-            glFramebufferTexture2D(GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_position_texture->GetId(), 0);
-            CatchGLErrors("Failed to attach color attachment 2 to framebuffer.", false);
-            m_position_texture->End();
-
-            draw_buffers[draw_buffer_index++] = GL_COLOR_ATTACHMENT2;
-        }
-
-        if (m_has_data_texture) {
-            m_data_texture->Use();
-            glFramebufferTexture2D(GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_data_texture->GetId(), 0);
-            CatchGLErrors("Failed to attach color attachment 3 to framebuffer.", false);
-            m_data_texture->End();
-
-            draw_buffers[draw_buffer_index++] = GL_COLOR_ATTACHMENT3;
-        }
-
-        if (m_has_depth_texture) {
-            m_depth_texture->Use();
-            glFramebufferTexture2D(GL_FRAMEBUFFER,
-                GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depth_texture->GetId(), 0);
+        if (m_attachments[FRAMEBUFFER_ATTACHMENT_DEPTH] != nullptr) {
+            m_attachments[FRAMEBUFFER_ATTACHMENT_DEPTH]->Use();
+            glFramebufferTexture2D(
+                GL_FRAMEBUFFER,
+                GL_DEPTH_ATTACHMENT,
+                GL_TEXTURE_2D,
+                m_attachments[FRAMEBUFFER_ATTACHMENT_DEPTH]->GetId(),
+                0
+            );
             CatchGLErrors("Failed to attach depth texture to framebuffer.", false);
-            m_depth_texture->End();
+            m_attachments[FRAMEBUFFER_ATTACHMENT_DEPTH]->End();
         }
 
         glDrawBuffers(draw_buffer_index, draw_buffers);
@@ -148,30 +104,51 @@ void Framebuffer2D::Use()
 
 }
 
-void Framebuffer2D::StoreColor()
+void Framebuffer2D::Store(FramebufferAttachment attachment, std::shared_ptr<Texture> &texture)
 {
-    if (!m_has_color_texture) {
+    if (m_attachments[attachment] == nullptr) {
         return;
     }
 
-    m_color_texture->Use();
+    // What happens for depth tex?
+    
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + int(attachment));
+    CatchGLErrors("Failed to set read buffer");
 
-    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
+    //m_attachments[attachment]->Use();
+    //texture->Use();
 
-    m_color_texture->End();
-}
-
-void Framebuffer2D::StoreDepth()
-{
-    if (!m_has_depth_texture) {
-        return;
+    // TEMP
+    /*if (!texture->id) {
+        // use without creating data
+        glGenTextures(1, &texture->id);
+        CatchGLErrors("Failed to generate texture.", true);
     }
 
-    m_depth_texture->Use();
+    glBindTexture(GL_TEXTURE_2D, texture->GetId());
+    CatchGLErrors("Failed to use texture");
 
-    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
+    glTexParameteri(GL_TEXTURE_2D,
+        GL_TEXTURE_MAG_FILTER, texture->GetMagFilter());
+    glTexParameteri(GL_TEXTURE_2D,
+        GL_TEXTURE_MIN_FILTER, texture->GetMinFilter());
+    glTexParameteri(GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_S, texture->GetWrapS());
+    glTexParameteri(GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_T, texture->GetWrapT());
 
-    m_depth_texture->End();
+    // glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
+    glCopyTexImage2D(GL_TEXTURE_2D, 0, m_attachments[attachment]->GetFormat(), 0, 0, width, height, 0);
+    CatchGLErrors("Failed to copy subimage");
+
+    texture->is_uploaded = true;
+    texture->is_created = true;*/
+
+    texture->Use(false);
+    texture->CopyData(m_attachments[attachment].get());
+    texture->End();
+
+    //m_attachments[attachment]->End();
 }
 
 } // namespace apex

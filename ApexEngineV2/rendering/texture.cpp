@@ -1,10 +1,12 @@
 #include "texture.h"
+#include "../core_engine.h"
 #include "../gl_util.h"
 
 namespace apex {
 
 Texture::Texture()
-    : width(0),
+    : id(0),
+      width(0),
       height(0),
       bytes(nullptr),
       ifmt(GL_RGB8),
@@ -17,7 +19,8 @@ Texture::Texture()
 }
 
 Texture::Texture(int width, int height, unsigned char *bytes)
-    : width(width),
+    : id(0),
+      width(width),
       height(height),
       bytes(bytes),
       ifmt(GL_RGB8),
@@ -61,10 +64,26 @@ void Texture::SetWrapMode(int s, int t)
     wrap_t = t;
 }
 
+size_t Texture::NumComponents(int format)
+{
+    switch (format) {
+    // case CoreEngine::GLEnums::RED:
+    case CoreEngine::GLEnums::DEPTH_COMPONENT:
+        return 1;
+    // case CoreEngine::GLEnums::RG:
+    case CoreEngine::GLEnums::RGB:
+        return 3;
+    case CoreEngine::GLEnums::RGBA:
+        return 4;
+    }
+
+    assert(false && "Unknown num components for format" && format);
+}
+
 void Texture::ActiveTexture(int i)
 {
     glActiveTexture(GL_TEXTURE0 + i);
-    CatchGLErrors("Failed to set active texture", false);
+    CatchGLErrors("Failed to set active texture", true);
 }
 
 } // namespace apex

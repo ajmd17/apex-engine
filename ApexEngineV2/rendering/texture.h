@@ -21,18 +21,29 @@ public:
     void SetFilter(int mag, int min);
     void SetWrapMode(int s, int t);
 
+    virtual void CopyData(Texture * const other) = 0;
+
     inline int GetWidth() const { return width; }
     inline int GetHeight() const { return height; }
 
+    inline int GetMagFilter() const { return mag_filter; }
+    inline int GetMinFilter() const { return min_filter; }
+    inline int GetWrapS() const { return wrap_s; }
+    inline int GetWrapT() const { return wrap_t; }
+
     unsigned char * const GetBytes() const { return bytes; }
 
+    static size_t NumComponents(int format);
     static void ActiveTexture(int i);
 
-    virtual void Use() = 0;
+    virtual void Use(bool upload_data = true) = 0;
     virtual void End() = 0;
 
-protected:
     unsigned int id;
+
+    bool is_created, is_uploaded;
+
+protected:
     int ifmt, fmt, width, height;
     unsigned char *bytes;
 

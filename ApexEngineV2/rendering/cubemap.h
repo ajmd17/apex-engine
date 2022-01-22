@@ -13,12 +13,6 @@ namespace apex {
 
 class Cubemap : public Texture {
 public:
-    struct MipMap {
-        std::vector<unsigned char> bytes;
-        size_t size;
-    };
-
-    typedef std::array<Cubemap::MipMap, CUBEMAP_NUM_MIPMAPS> MipMapArray_t;
 
     Cubemap(const std::array<std::shared_ptr<Texture2D>, 6> &textures);
     virtual ~Cubemap();
@@ -26,14 +20,13 @@ public:
     inline const std::array<std::shared_ptr<Texture2D>, 6> GetTextures() const
         { return m_textures; }
 
-    void Use();
+    virtual void CopyData(Texture * const other) override;
+
+    void Use(bool upload_data = true);
     void End();
 
 private:
     std::array<std::shared_ptr<Texture2D>, 6> m_textures;
-    bool is_created, is_uploaded;
-
-    Cubemap::MipMapArray_t GenerateMipmaps(const std::shared_ptr<Texture2D> &texture);
 };
 
 } // namespace apex

@@ -11,11 +11,11 @@ public:
     Texture2D(int width, int height, unsigned char *bytes);
     virtual ~Texture2D();
 
-    void Use();
-    void End();
+    virtual void CopyData(Texture * const other) override;
 
+    void Use(bool upload_data = true);
+    void End();
 private:
-    bool is_created, is_uploaded;
 };
 
 } // namespace apex

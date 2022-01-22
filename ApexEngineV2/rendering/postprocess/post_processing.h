@@ -9,7 +9,7 @@
 
 #include "../../math/vector2.h"
 #include "../mesh.h"
-#include "../framebuffer.h"
+#include "../framebuffer_2d.h"
 #include "../camera/camera.h"
 #include "./post_filter.h"
 
@@ -71,6 +71,10 @@ public:
 
 private:
     // void UpdateFilterScaling(PostFilter *filter);
+    Framebuffer::FramebufferAttachments_t m_chained_textures;
+    bool m_chained_textures_initialized;
+
+    Framebuffer2D *m_blit_framebuffer;
 
     std::vector<Filter> m_filters;
 
