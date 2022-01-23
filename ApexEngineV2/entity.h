@@ -13,9 +13,11 @@
 #include "rendering/renderable.h"
 #include "rendering/material.h"
 
+#include "asset/fbom/fbom.h"
+
 namespace apex {
 class Camera;
-class Entity : public Loadable {
+class Entity : public fbom::FBOMLoadable {
 public:
     enum UpdateFlags {
         UPDATE_TRANSFORM = 0x01,

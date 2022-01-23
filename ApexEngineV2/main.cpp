@@ -69,6 +69,9 @@
 #include "rendering/ui/ui_button.h"
 #include "rendering/ui/ui_text.h"
 
+/* FBOM */
+#include "asset/fbom/fbom.h"
+
 /* Standard library */
 #include <cstdlib>
 #include <ctime>
@@ -233,6 +236,16 @@ public:
 
     void Initialize()
     {
+        fbom::FBOMData dat;
+        char my_long_str[] = "hello world! this is a test. hello world! this is a test. "
+            "hello world! this is a test. hello world! this is a test. "
+            "hello world! this is a test. hello world! this is a test. "
+            "hello world! this is a test. hello world! this is a test. "
+            "hello world! this is a test. hello world! this is a test. ";
+        dat.SetBytes(sizeof(my_long_str), (unsigned char*)my_long_str);
+        std::cout << "data: " << dat.ToString() << "\n";
+
+
         ShaderManager::GetInstance()->SetBaseShaderProperties(ShaderProperties()
             .Define("SHADOW_MAP_RADIUS", 0.055f)
         );
