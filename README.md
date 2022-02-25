@@ -1,5 +1,7 @@
 # Apex Engine
 
+# NOTE: name has been changed and is under active development in a new repo. [https://github.com/krait-games/hyperion-engine]
+
 ### About
 
 Apex Engine (pending name change) is a game engine written in C++. I started writing it about five or six years ago, and for a while I hadn't worked on it. Now, I'm bringing it back and enhancing it quite a bit.
